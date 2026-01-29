@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Calendar Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ===== RESET & BASE ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            color: #1f2937;
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 15px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .mode-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .demo-badge {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+        }
+
+        .live-badge {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+        }
+
+        .live-toggle {
+            background: transparent;
+            border: 2px solid #3b82f6;
+            color: #3b82f6;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .live-toggle:hover {
+            background: #3b82f6;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        /* ===== VOICE CIRCLE ===== */
+        .voice-section {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .voice-circle {
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 25px;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .voice-circle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(59, 130, 246, 0.4);
+        }
+
+        .voice-circle.listening {
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            animation: pulse 1.5s infinite;
+        }
+
+        .mic-icon {
+            font-size: 48px;
+            color: white;
+            z-index: 2;
+        }
+
+        .pulse-ring {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            border: 3px solid rgba(59, 130, 246, 0.3);
+            border-radius: 50%;
+            animation: ringPulse 2s infinite;
+        }
+
+        .ring-2 {
+            animation-delay: 0.5s;
+        }
+
+        .voice-instruction {
+            font-size: 18px;
+            color: #4b5563;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        /* ===== TRANSCRIPTION ===== */
+        .transcription-container {
+            margin: 25px 0;
+        }
+
+        .transcription-box {
+            background: white;
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin: 0 auto;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #3b82f6;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .transcription-box i {
+            color: #3b82f6;
+            font-size: 20px;
+            margin-top: 2px;
+        }
+
+        #transcriptionText {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #1f2937;
+            flex: 1;
+        }
+
+        /* ===== ASSISTANT RESPONSE ===== */
+        .assistant-response {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 25px auto;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            border: 1px solid #bae6fd;
+        }
+
+        .response-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            color: #0369a1;
+        }
+
+        .response-header i {
+            font-size: 20px;
+        }
+
+        .response-header span {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        #responseText {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #0c4a6e;
+        }
+
+        /* ===== MEETINGS SECTION ===== */
+        .meetings-section {
+            margin-top: 30px;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            color: #1f2937;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .section-title i {
+            color: #3b82f6;
+        }
+
+        .meetings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .meeting-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+            border-left: 4px solid #3b82f6;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .meeting-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .meeting-time {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .meeting-time i {
+            color: #3b82f6;
+        }
+
+        .meeting-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .meeting-participants {
+            font-size: 14px;
+            color: #4b5563;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .meeting-participants i {
+            color: #8b5cf6;
+        }
+
+        /* ===== SETTINGS PANEL ===== */
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 350px;
+            height: 100vh;
+            background: white;
+            box-shadow: -5px 0 30px rgba(0, 0, 0, 0.15);
+            padding: 25px;
+            transition: right 0.4s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .settings-panel.active {
+            right: 0;
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f3f4f6;
+        }
+
+        .settings-header h3 {
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .close-settings {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #6b7280;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .close-settings:hover {
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .settings-content {
+            color: #4b5563;
+            line-height: 1.6;
+        }
+
+        .settings-content ol {
+            margin: 15px 0 25px 20px;
+        }
+
+        .settings-content li {
+            margin-bottom: 8px;
+        }
+
+        .api-form {
+            margin-top: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #d1d5db;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .connect-google {
+            width: 100%;
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            transition: all 0.3s;
+        }
+
+        .connect-google:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(66, 133, 244, 0.3);
+        }
+
+        .save-settings {
+            width: 100%;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .save-settings:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .setup-steps {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .step {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .step:last-child {
+            border-bottom: none;
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        /* ===== SETTINGS BUTTON ===== */
+        .settings-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .settings-button:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.6);
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 15px 40px rgba(59, 130, 246, 0.5);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+            }
+        }
+
+        @keyframes ringPulse {
+            0% {
+                transform: scale(0.8);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.3);
+                opacity: 0;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 640px) {
+            body {
+                padding: 15px;
+            }
+            
+            .voice-circle {
+                width: 160px;
+                height: 160px;
+            }
+            
+            .mic-icon {
+                font-size: 42px;
+            }
+            
+            .settings-panel {
+                width: 100%;
+                right: -100%;
+            }
+            
+            .transcription-box,
+            .assistant-response {
+                margin: 0 10px;
+            }
+        }
+
+        /* ===== LOADING STATE ===== */
+        .loading {
+            position: relative;
+            color: transparent !important;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #e5e7eb;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: -10px;
+            margin-top: -10px;
+        }
+
+        /* ===== STATUS MESSAGES ===== */
+        .status-message {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="mode-indicator">
+                <span class="demo-badge" id="modeBadge">DEMO MODE</span>
+            </div>
+            <button class="live-toggle" id="liveToggle">
+                <span class="toggle-text">Switch to Live</span>
+                <i class="fas fa-exchange-alt"></i>
+            </button>
+        </header>
+
+        <!-- Main Voice Interface -->
+        <main class="main-content">
+            <!-- Voice Circle -->
+            <div class="voice-section">
+                <div class="voice-circle" id="voiceCircle">
+                    <div class="mic-icon">
+                        <i class="fas fa-microphone"></i>
+                    </div>
+                    <div class="pulse-ring"></div>
+                    <div class="pulse-ring ring-2"></div>
+                </div>
+                <p class="voice-instruction" id="voiceInstruction">Tap to speak</p>
+                
+                <!-- Transcription -->
+                <div class="transcription-container">
+                    <div class="transcription-box" id="transcriptionBox">
+                        <i class="fas fa-comment-alt"></i>
+                        <span id="transcriptionText">Say something like "Schedule a meeting with John tomorrow at 3pm"</span>
+                    </div>
+                </div>
+
+                <!-- Assistant Response -->
+                <div class="assistant-response" id="assistantResponse">
+                    <div class="response-header">
+                        <i class="fas fa-robot"></i>
+                        <span>Assistant</span>
+                    </div>
+                    <p id="responseText">I can help you schedule, reschedule, cancel meetings, or tell you what's on your calendar.</p>
+                </div>
+            </div>
+
+            <!-- Meetings Section -->
+            <div class="meetings-section">
+                <h2 class="section-title">
+                    <i class="fas fa-calendar-alt"></i>
+                    Today's Meetings
+                </h2>
+                <div class="meetings-list" id="meetingsList">
+                    <!-- Meetings loaded by JavaScript -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Settings Panel -->
+        <div class="settings-panel" id="settingsPanel">
+            <div class="settings-header">
+                <h3><i class="fas fa-cog"></i> Setup Required</h3>
+                <button class="close-settings" id="closeSettings">&times;</button>
+            </div>
+            <div class="settings-content">
+                <p>To use live mode, you need to set up:</p>
+                
+                <div class="setup-steps">
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        <strong>Google Calendar API</strong>
+                        <p style="font-size: 13px; margin-top: 5px; color: #6b7280;">
+                            Get API key from Google Cloud Console
+                        </p>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        <strong>Twilio Account</strong>
+                        <p style="font-size: 13px; margin-top: 5px; color: #6b7280;">
+                            For call reminders (Singapore number)
+                        </p>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        <strong>Enter API Keys Below</strong>
+                        <p style="font-size: 13px; margin-top: 5px; color: #6b7280;">
+                            Save and switch to Live Mode
+                        </p>
+                    </div>
+                </div>
+
+                <div class="api-form">
+                    <div class="form-group">
+                        <label>Google Calendar API Key</label>
+                        <input type="text" placeholder="AIzaSy..." id="googleApiKey">
+                        <small style="color: #6b7280; font-size: 12px;">Get from Google Cloud Console → APIs & Services → Credentials</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Google Calendar ID</label>
+                        <input type="text" placeholder="primary or your-email@gmail.com" id="calendarId" value="primary">
+                        <small style="color: #6b7280; font-size: 12px;">Usually "primary" for your main calendar</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Twilio Account SID</label>
+                        <input type="text" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxx" id="twilioSid">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Twilio Auth Token</label>
+                        <input type="password" placeholder="Your Twilio auth token" id="twilioToken">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Twilio Phone Number</label>
+                        <input type="text" placeholder="+6512345678" id="twilioNumber">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Your Singapore Mobile</label>
+                        <input type="text" placeholder="+6581234567" id="yourMobile">
+                        <small style="color: #6b7280; font-size: 12px;">For call reminders (must be verified in Twilio)</small>
+                    </div>
+
+                    <div id="statusMessages"></div>
+
+                    <button class="save-settings" id="saveSettings">
+                        <i class="fas fa-save"></i> Save All Settings
+                    </button>
+                    
+                    <div style="margin-top: 20px; padding: 15px; background: #fef3c7; border-radius: 10px; border-left: 4px solid #f59e0b;">
+                        <strong><i class="fas fa-info-circle"></i> Important:</strong>
+                        <p style="font-size: 13px; margin-top: 5px; color: #92400e;">
+                            API keys are stored in your browser only. For security, only use on your personal devices.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Button -->
+        <button class="settings-button" id="settingsButton">
+            <i class="fas fa-cog"></i>
+        </button>
+    </div>
+
+    <script>
+        // ==================== APP CONFIGURATION ====================
+        const CONFIG = {
+            GOOGLE_CALENDAR_API: 'https://www.googleapis.com/calendar/v3',
+            TWILIO_API: 'https://api.twilio.com/2010-04-01',
+            REMINDER_MINUTES: 45, // Call 45 minutes before meeting
+            DEMO_MODE: true
+        };
+
+        // ==================== DEMO DATA ====================
+        const demoMeetings = [
+            {
+                id: 'demo1',
+                time: "10:00 AM",
+                title: "Team Standup",
+                participants: "Engineering Team",
+                color: "#3b82f6",
+                start: "2024-01-15T10:00:00",
+                end: "2024-01-15T10:30:00"
+            },
+            {
+                id: 'demo2',
+                time: "2:30 PM",
+                title: "Client Review",
+                participants: "John Tan",
+                color: "#8b5cf6",
+                start: "2024-01-15T14:30:00",
+                end: "2024-01-15T15:30:00"
+            },
+            {
+                id: 'demo3',
+                time: "4:45 PM",
+                title: "Project Planning",
+                participants: "Marketing Team",
+                color: "#10b981",
+                start: "2024-01-15T16:45:00",
+                end: "2024-01-15T17:45:00"
+            }
+        ];
+
+        // ==================== APP STATE ====================
+        let appState = {
+            isLiveMode: false,
+            isListening: false,
+            speechRecognition: null,
+            settings: {
+                googleApiKey: '',
+                calendarId: 'primary',
+                twilioSid: '',
+                twilioToken: '',
+                twilioNumber: '',
+                yourMobile: ''
+            },
+            scheduledCalls: {}
+        };
+
+        // ==================== DOM ELEMENTS ====================
+        const elements = {
+            voiceCircle: document.getElementById('voiceCircle'),
+            voiceInstruction: document.getElementById('voiceInstruction'),
+            transcriptionText: document.getElementById('transcriptionText'),
+            responseText: document.getElementById('responseText'),
+            meetingsList: document.getElementById('meetingsList'),
+            liveToggle: document.getElementById('liveToggle'),
+            modeBadge: document.getElementById('modeBadge'),
+            settingsPanel: document.getElementById('settingsPanel'),
+            settingsButton: document.getElementById('settingsButton'),
+            closeSettings: document.getElementById('closeSettings'),
+            saveSettings: document.getElementById('saveSettings'),
+            statusMessages: document.getElementById('statusMessages'),
+            googleApiKey: document.getElementById('googleApiKey'),
+            calendarId: document.getElementById('calendarId'),
+            twilioSid: document.getElementById('twilioSid'),
+            twilioToken: document.getElementById('twilioToken'),
+            twilioNumber: document.getElementById('twilioNumber'),
+            yourMobile: document.getElementById('yourMobile')
+        };
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+            loadMeetings();
+            setupVoiceRecognition();
+            setupEventListeners();
+            checkApiStatus();
+        });
+
+        // ==================== SETTINGS MANAGEMENT ====================
+        function loadSettings() {
+            const saved = localStorage.getItem('calendarAssistantSettings');
+            if (saved) {
+                appState.settings = JSON.parse(saved);
+                elements.googleApiKey.value = appState.settings.googleApiKey || '';
+                elements.calendarId.value = appState.settings.calendarId || 'primary';
+                elements.twilioSid.value = appState.settings.twilioSid || '';
+                elements.twilioToken.value = appState.settings.twilioToken || '';
+                elements.twilioNumber.value = appState.settings.twilioNumber || '';
+                elements.yourMobile.value = appState.settings.yourMobile || '';
+            }
+        }
+
+        function saveSettings() {
+            appState.settings = {
+                googleApiKey: elements.googleApiKey.value.trim(),
+                calendarId: elements.calendarId.value.trim() || 'primary',
+                twilioSid: elements.twilioSid.value.trim(),
+                twilioToken: elements.twilioToken.value.trim(),
+                twilioNumber: elements.twilioNumber.value.trim(),
+                yourMobile: elements.yourMobile.value.trim()
+            };
+            
+            localStorage.setItem('calendarAssistantSettings', JSON.stringify(appState.settings));
+            showStatus('Settings saved successfully!', 'success');
+            checkApiStatus();
+            
+            // Close settings after 2 seconds
+            setTimeout(() => {
+                elements.settingsPanel.classList.remove('active');
+            }, 2000);
+        }
+
+        // ==================== MEETINGS DISPLAY ====================
+        function loadMeetings() {
+            elements.meetingsList.innerHTML = '';
+            
+            if (!appState.isLiveMode) {
+                // DEMO MODE: Show demo meetings
+                displayMeetings(demoMeetings);
+            } else {
+                // LIVE MODE: Load from Google Calendar
+                if (appState.settings.googleApiKey) {
+                    loadGoogleCalendarEvents();
+                } else {
+                    elements.meetingsList.innerHTML = `
+                        <div class="meeting-card" style="text-align: center; color: #6b7280;">
+                            <i class="fas fa-calendar-plus" style="font-size: 32px; margin-bottom: 10px; color: #d1d5db;"></i>
+                            <p>Please configure Google Calendar API in Settings</p>
+                            <button onclick="elements.settingsButton.click()" style="margin-top: 10px; padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                                Open Settings
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function displayMeetings(meetings) {
+            if (meetings.length === 0) {
+                elements.meetingsList.innerHTML = `
+                    <div class="meeting-card" style="text-align: center; color: #6b7280;">
+                        <i class="fas fa-calendar-plus" style="font-size: 32px; margin-bottom: 10px; color: #d1d5db;"></i>
+                        <p>No meetings scheduled for today</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            meetings.forEach((meeting, index) => {
+                const card = document.createElement('div');
+                card.className = 'meeting-card';
+                card.style.animation = `slideIn 0.5s ease ${index * 0.1}s both`;
+                card.style.borderLeftColor = meeting.color || '#3b82f6';
+                
+                const time = meeting.time || formatTime(meeting.start);
+                const title = meeting.title || 'Meeting';
+                const participants = meeting.participants || 'Participants';
+                
+                card.innerHTML = `
+                    <div class="meeting-time">
+                        <i class="far fa-clock"></i>
+                        ${time}
+                    </div>
+                    <div class="meeting-title">${title}</div>
+                    <div class="meeting-participants">
+                        <i class="fas fa-users"></i>
+                        with ${participants}
+                    </div>
+                    ${appState.isLiveMode ? `
+                    <div style="margin-top: 10px; display: flex; gap: 10px;">
+                        <button onclick="cancelMeeting('${meeting.id}')" style="padding: 5px 10px; background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button onclick="rescheduleMeeting('${meeting.id}')" style="padding: 5px 10px; background: #fef3c7; color: #d97706; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">
+                            <i class="fas fa-clock"></i> Reschedule
+                        </button>
+                    </div>
+                    ` : ''}
+                `;
+                
+                elements.meetingsList.appendChild(card);
+            });
+        }
+
+        // ==================== GOOGLE CALENDAR API ====================
+        async function loadGoogleCalendarEvents() {
+            if (!appState.settings.googleApiKey) return;
+            
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const url = `${CONFIG.GOOGLE_CALENDAR_API}/calendars/${encodeURIComponent(appState.settings.calendarId)}/events?key=${appState.settings.googleApiKey}&timeMin=${today}T00:00:00Z&timeMax=${today}T23:59:59Z&orderBy=startTime&singleEvents=true`;
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.items) {
+                    const meetings = data.items.map(event => ({
+                        id: event.id,
+                        title: event.summary || 'Untitled Meeting',
+                        participants: event.attendees ? event.attendees.map(a => a.email).join(', ') : 'No attendees',
+                        start: event.start.dateTime || event.start.date,
+                        end: event.end.dateTime || event.end.date,
+                        color: getColorForEvent(event)
+                    }));
+                    
+                    displayMeetings(meetings);
+                    scheduleReminderCalls(meetings);
+                }
+            } catch (error) {
+                console.error('Google Calendar error:', error);
+                showStatus('Error loading calendar: ' + error.message, 'error');
+            }
+        }
+
+        async function createGoogleCalendarEvent(eventData) {
+            if (!appState.settings.googleApiKey) {
+                showStatus('Google Calendar API key not configured', 'error');
+                return null;
+            }
+            
+            try {
+                const url = `${CONFIG.GOOGLE_CALENDAR_API}/calendars/${encodeURIComponent(appState.settings.calendarId)}/events?key=${appState.settings.googleApiKey}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(eventData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.id) {
+                    showStatus('Meeting created successfully!', 'success');
+                    loadMeetings();
+                    return data;
+                } else {
+                    throw new Error(data.error?.message || 'Failed to create event');
+                }
+            } catch (error) {
+                console.error('Create event error:', error);
+                showStatus('Error creating meeting: ' + error.message, 'error');
+                return null;
+            }
+        }
+
+        // ==================== TWILIO CALL SCHEDULING ====================
+        function scheduleReminderCalls(meetings) {
+            if (!appState.settings.twilioSid || !appState.settings.twilioToken || !appState.settings.yourMobile) {
+                return;
+            }
+            
+            meetings.forEach(meeting => {
+                const meetingTime = new Date(meeting.start);
+                const reminderTime = new Date(meetingTime.getTime() - CONFIG.REMINDER_MINUTES * 60000);
+                const now = new Date();
+                
+                // Only schedule future meetings
+                if (reminderTime > now) {
+                    const delay = reminderTime.getTime() - now.getTime();
+                    
+                    // Clear existing timeout for this meeting
+                    if (appState.scheduledCalls[meeting.id]) {
+                        clearTimeout(appState.scheduledCalls[meeting.id]);
+                    }
+                    
+                    // Schedule new call
+                    appState.scheduledCalls[meeting.id] = setTimeout(() => {
+                        makeReminderCall(meeting);
+                    }, delay);
+                    
+                    console.log(`Scheduled call for ${meeting.title} at ${reminderTime}`);
+                }
+            });
+        }
+
+        async function makeReminderCall(meeting) {
+            if (!appState.settings.twilioSid || !appState.settings.twilioToken || !appState.settings.twilioNumber || !appState.settings.yourMobile) {
+                return;
+            }
+            
+            try {
+                const twilioUrl = `${CONFIG.TWILIO_API}/Accounts/${appState.settings.twilioSid}/Calls.json`;
+                
+                // Create TwiML for interactive call
+                const twiml = `
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <Response>
+                        <Say voice="alice">Hello, this is your calendar reminder. You have a meeting: ${meeting.title} in ${CONFIG.REMINDER_MINUTES} minutes.</Say>
+                        <Gather numDigits="1" action="https://your-server.com/handle-response" method="POST">
+                            <Say>Press 1 to confirm attendance. Press 2 to reschedule. Press 3 to cancel.</Say>
+                        </Gather>
+                        <Say>We didn't receive any input. Goodbye!</Say>
+                    </Response>
+                `;
+                
+                // Note: Twilio requires server-side TwiML URL
+                // This is a simplified version - in production, you'd need a server
+                showStatus(`Call reminder would be sent for: ${meeting.title}`, 'warning');
+                
+            } catch (error) {
+                console.error('Twilio call error:', error);
+            }
+        }
+
+        // ==================== VOICE RECOGNITION ====================
+        function setupVoiceRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                appState.speechRecognition = new SpeechRecognition();
+                
+                appState.speechRecognition.continuous = false;
+                appState.speechRecognition.interimResults = false;
+                appState.speechRecognition.lang = 'en-US';
+                
+                appState.speechRecognition.onstart = function() {
+                    appState.isListening = true;
+                    elements.voiceCircle.classList.add('listening');
+                    elements.voiceInstruction.textContent = "Listening...";
+                    elements.transcriptionText.textContent = "";
+                };
+                
+                appState.speechRecognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    elements.transcriptionText.textContent = transcript;
+                    processVoiceCommand(transcript);
+                };
+                
+                appState.speechRecognition.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                    elements.voiceInstruction.textContent = "Error listening. Tap to try again.";
+                    appState.isListening = false;
+                    elements.voiceCircle.classList.remove('listening');
+                };
+                
+                appState.speechRecognition.onend = function() {
+                    appState.isListening = false;
+                    elements.voiceCircle.classList.remove('listening');
+                    elements.voiceInstruction.textContent = "Tap to speak";
+                };
+            } else {
+                elements.voiceCircle.style.opacity = '0.6';
+                elements.voiceInstruction.textContent = "Voice not supported in this browser";
+                elements.voiceCircle.onclick = null;
+            }
+        }
+
+        // ==================== VOICE COMMAND PROCESSING ====================
+        function processVoiceCommand(command) {
+            const lowerCommand = command.toLowerCase();
+            
+            // Show thinking animation
+            elements.responseText.classList.add('loading');
+            
+            setTimeout(() => {
+                elements.responseText.classList.remove('loading');
+                
+                if (!appState.isLiveMode) {
+                    processDemoCommand(lowerCommand);
+                } else {
+                    processLiveCommand(lowerCommand);
+                }
+            }, 800);
+        }
+
+        function processDemoCommand(command) {
+            let response = "";
+            
+            if (command.includes('schedule') || command.includes('set up') || command.includes('create')) {
+                response = "In Demo Mode: I would schedule a meeting. Switch to Live Mode to connect to your actual Google Calendar.";
+                
+                // Add demo meeting
+                const newMeeting = {
+                    id: 'demo' + Date.now(),
+                    time: "3:00 PM",
+                    title: "New Meeting",
+                    participants: "From voice command",
+                    color: "#f59e0b",
+                    start: new Date().toISOString(),
+                    end: new Date(Date.now() + 3600000).toISOString()
+                };
+                demoMeetings.push(newMeeting);
+                loadMeetings();
+            }
+            else if (command.includes('what do i have') || command.includes('meetings')) {
+                response = `You have ${demoMeetings.length} demo meeting${demoMeetings.length !== 1 ? 's' : ''} today. Switch to Live Mode to see your real calendar.`;
+            }
+            else if (command.includes('cancel') || command.includes('delete')) {
+                response = "In Demo Mode: I would cancel a meeting. Switch to Live Mode to manage your actual calendar.";
+                if (demoMeetings.length > 0) demoMeetings.pop();
+                loadMeetings();
+            }
+            else if (command.includes('reschedule') || command.includes('move')) {
+                response = "In Demo Mode: I would reschedule a meeting. Switch to Live Mode for real calendar management.";
+            }
+            else if (command.includes('hello') || command.includes('hi')) {
+                response = "Hello! I'm your voice calendar assistant. Switch to Live Mode and configure API keys to use with your actual Google Calendar.";
+            }
+            else {
+                response = "I can help you manage meetings. Say 'Schedule a meeting', 'What do I have today?', or 'Cancel my meeting'. Switch to Live Mode for real calendar integration.";
+            }
+            
+            elements.responseText.textContent = response;
+            speakResponse(response);
+        }
+
+        async function processLiveCommand(command) {
+            let response = "";
+            
+            if (command.includes('schedule') || command.includes('set up') || command.includes('create')) {
+                response = "Creating meeting...";
+                elements.responseText.textContent = response;
+                
+                // Parse meeting details (simplified)
+                const meetingData = parseMeetingCommand(command);
+                const result = await createGoogleCalendarEvent(meetingData);
+                
+                if (result) {
+                    response = `Meeting "${meetingData.summary}" created successfully!`;
+                } else {
+                    response = "Failed to create meeting. Check your API keys.";
+                }
+            }
+            else if (command.includes('what do i have') || command.includes('meetings')) {
+                await loadGoogleCalendarEvents();
+                response = "Loaded your meetings from Google Calendar.";
+            }
+            else if (command.includes('cancel') || command.includes('delete')) {
+                response = "Please use the Cancel button on the meeting card for now. Voice cancellation coming soon!";
+            }
+            else if (command.includes('reschedule') || command.includes('move')) {
+                response = "Please use the Reschedule button on the meeting card for now. Voice rescheduling coming soon!";
+            }
+            else {
+                response = "I can create meetings, show your schedule, or help with rescheduling. Try 'Schedule meeting with John tomorrow at 3pm'.";
+            }
+            
+            elements.responseText.textContent = response;
+            speakResponse(response);
+        }
+
+        function parseMeetingCommand(command) {
+            // Simplified parsing - in production, use NLP or more sophisticated parsing
+            const now = new Date();
+            const tomorrow = new Date(now.getTime() + 86400000);
+            
+            return {
+                summary: "Meeting from Voice Command",
+                description: `Created via voice command: "${command}"`,
+                start: {
+                    dateTime: tomorrow.toISOString(),
+                    timeZone: "Asia/Singapore"
+                },
+                end: {
+                    dateTime: new Date(tomorrow.getTime() + 3600000).toISOString(),
+                    timeZone: "Asia/Singapore"
+                },
+                attendees: [
+                    { email: "participant@example.com" }
+                ]
+            };
+        }
+
+        // ==================== TEXT-TO-SPEECH ====================
+        function speakResponse(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        // ==================== MODE TOGGLE ====================
+        function toggleLiveMode() {
+            appState.isLiveMode = !appState.isLiveMode;
+            
+            if (appState.isLiveMode) {
+                elements.modeBadge.textContent = "LIVE MODE";
+                elements.modeBadge.className = "live-badge";
+                elements.liveToggle.innerHTML = '<span class="toggle-text">Switch to Demo</span><i class="fas fa-exchange-alt"></i>';
+                elements.responseText.textContent = "Live mode activated! I'm now connected to your Google Calendar.";
+                
+                // Check API configuration
+                checkApiStatus();
+            } else {
+                elements.modeBadge.textContent = "DEMO MODE";
+                elements.modeBadge.className = "demo-badge";
+                elements.liveToggle.innerHTML = '<span class="toggle-text">Switch to Live</span><i class="fas fa-exchange-alt"></i>';
+                elements.responseText.textContent = "Demo mode activated. Try saying 'Schedule a meeting with John tomorrow at 3pm'.";
+            }
+            
+            loadMeetings();
+        }
+
+        // ==================== UTILITY FUNCTIONS ====================
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        }
+
+        function getColorForEvent(event) {
+            // Simple color coding based on event title
+            const colors = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444'];
+            const hash = event.summary ? event.summary.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 0;
+            return colors[hash % colors.length];
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            elements.statusMessages.innerHTML = '';
+            elements.statusMessages.appendChild(statusDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (statusDiv.parentNode) {
+                    statusDiv.remove();
+                }
+            }, 5000);
+        }
+
+        function checkApiStatus() {
+            const hasGoogleApi = !!appState.settings.googleApiKey;
+            const hasTwilio = !!appState.settings.twilioSid && !!appState.settings.twilioToken && !!appState.settings.twilioNumber && !!appState.settings.yourMobile;
+            
+            if (appState.isLiveMode) {
+                if (!hasGoogleApi) {
+                    showStatus('Google Calendar API key not configured', 'error');
+                }
+                if (!hasTwilio) {
+                    showStatus('Twilio not fully configured for call reminders', 'warning');
+                }
+                if (hasGoogleApi && hasTwilio) {
+                    showStatus('All systems ready! You can now use voice commands.', 'success');
+                }
+            }
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        function setupEventListeners() {
+            // Voice circle click
+            elements.voiceCircle.addEventListener('click', function() {
+                if (appState.speechRecognition && !appState.isListening) {
+                    appState.speechRecognition.start();
+                }
+            });
+            
+            // Live mode toggle
+            elements.liveToggle.addEventListener('click', toggleLiveMode);
+            
+            // Settings button
+            elements.settingsButton.addEventListener('click', function() {
+                elements.settingsPanel.classList.add('active');
+            });
+            
+            // Close settings
+            elements.closeSettings.addEventListener('click', function() {
+                elements.settingsPanel.classList.remove('active');
+            });
+            
+            // Save settings
+            elements.saveSettings.addEventListener('click', saveSettings);
+            
+            // Close settings when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!elements.settingsPanel.contains(event.target) && 
+                    !elements.settingsButton.contains(event.target) &&
+                    elements.settingsPanel.classList.contains('active')) {
+                    elements.settingsPanel.classList.remove('active');
+                }
+            });
+            
+            // Enter key in settings
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter' && elements.settingsPanel.classList.contains('active')) {
+                    saveSettings();
+                }
+                if (event.key === 'Escape' && elements.settingsPanel.classList.contains('active')) {
+                    elements.settingsPanel.classList.remove('active');
+                }
+            });
+        }
+
+        // ==================== PUBLIC FUNCTIONS ====================
+        window.cancelMeeting = async function(meetingId) {
+            if (!appState.isLiveMode || !appState.settings.googleApiKey) return;
+            
+            if (confirm('Are you sure you want to cancel this meeting?')) {
+                try {
+                    const url = `${CONFIG.GOOGLE_CALENDAR_API}/calendars/${encodeURIComponent(appState.settings.calendarId)}/events/${meetingId}?key=${appState.settings.googleApiKey}`;
+                    
+                    await fetch(url, { method: 'DELETE' });
+                    showStatus('Meeting cancelled successfully!', 'success');
+                    loadMeetings();
+                } catch (error) {
+                    showStatus('Error cancelling meeting: ' + error.message, 'error');
+                }
+            }
+        };
+
+        window.rescheduleMeeting = function(meetingId) {
+            showStatus('Reschedule feature coming soon! For now, please cancel and create a new meeting.', 'info');
+        };
+    </script>
+</body>
+</html>
